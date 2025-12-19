@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Semester 1 Flores Final MCQ Review</title>
+<style>
+  body{
+    margin:0;
+    font-family: Segoe UI, Arial, sans-serif;
+    background:url('cabin-in-the-woods-winter.webp') center/cover no-repeat fixed;
+  }
+  #timerFlash{
+    position:fixed; inset:0;
+    background:red; opacity:0;
+    pointer-events:none; z-index:999;
+  }
+  #timerFlash.active{ animation: flash .8s; }
+  @keyframes flash{0%{opacity:0;}50%{opacity:.65;}100%{opacity:0;}}
+
+  .overlay{
+    background:rgba(0,0,0,.6);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .quiz{
+    background:rgba(20,20,20,.92);
+    color:#fff;
+    padding:30px;
+    border-radius:22px;
+    width:100%;
+    max-width:980px;
+    box-shadow:0 0 30px rgba(0,0,0,.8);
+  }
+  h1{ text-align:center; margin:0 0 10px; }
+  .stats{
+    display:flex;
+    justify-content:space-between;
+    font-weight:bold;
+    margin-bottom:20px;
+  }
+  .question{ font-size:1.25rem; margin-bottom:15px; }
+  .option{
+    background:#222;
+    padding:14px;
+    border-radius:12px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .option:hover{ background:#333; }
+  .correct{ background:#1b5e20; }
+  .wrong{ background:#7f0000; }
+  .explanation{
+    margin-top:15px;
+    padding:15px;
+    background:rgba(0,0,0,.75);
+    border-radius:10px;
+    line-height:1.55;
+  }
+  .controls{
+    display:flex;
+    justify-content:space-between;
+    margin-top:15px;
+  }
+  button{
+    padding:10px 18px;
+    border:none;
+    border-radius:10px;
+    font-size:1rem;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="timerFlash"></div>
+<div class="overlay">
+  <div class="quiz">
+    <h1>📘 Semester 1 Flores Final MCQ Review 📘</h1>
+    <div class="stats">
+      <div>✔ <span id="correct">0</span></div>
+      <div>✘ <span id="wrong">0</span></div>
+      <div>⏳ <span id="time">60</span>s</div>
+      <div>📘 <span id="left">110</span> left</div>
+    </div>
+    <div id="q" class="question"></div>
+    <div id="opts"></div>
+    <div id="exp" class="explanation"></div>
+    <div class="controls">
+      <button onclick="nextQ()">Next</button>
+      <button onclick="resetQ()">Reset</button>
+    </div>
+  </div>
+</div>
+<script>
+let i=0, correct=0, wrong=0, time=60, timer;
+
+// Base set (cycled to 110 to keep file manageable)
+const base=[
+ {q:"Which best defines Juvenalian satire?",o:["Playful humor","Harsh moral outrage","Light parody","Gentle mockery"],a:1,e:"✔ Juvenalian satire is biting and morally outraged. ❌ Horatian satire is gentle. Example: Swift’s *A Modest Proposal*."},
+ {q:"Which sentence uses a gerund?",o:["Running is exhausting.","To run is healthy.","He ran quickly.","He is running late."],a:0,e:"✔ Gerunds are verbs acting as nouns. Here, 'Running' is the subject."},
+ {q:"Which is an example of mock encomium?",o:["Direct insult","False praise to criticize","Playful exaggeration","Comic understatement"],a:1,e:"✔ Mock encomium pretends to praise while actually condemning."},
+ {q:"Which fallacy presents only two choices?",o:["Bandwagon","Either–or","Post hoc","Red herring"],a:1,e:"✔ A false dilemma limits options unfairly."},
+ {q:"Which phrase is an oxymoron?",o:["Jumbo shrimp","Cold winter","Dark night","Loud music"],a:0,e:"✔ Oxymorons pair contradictory terms for effect."},
+ {q:"Which sentence contains a nonessential appositive?",o:["My cousin Alex plays.","My cousin, Alex, plays.","Dogs bark.","The car sped."],a:1,e:"✔ Commas signal nonessential information."},
+ {q:"Which device exaggerates physical traits?",o:["Caricature","Parody","Farce","Deflation"],a:0,e:"✔ Caricature exaggerates features to ridicule."},
+ {q:"Appealing to popularity commits which fallacy?",o:["Bandwagon","Ad hominem","Slippery slope","Post hoc"],a:0,e:"✔ Bandwagon assumes popularity equals correctness."},
+ {q:"Words with emotional associations illustrate what concept?",o:["Denotation","Connotation","Tone","Theme"],a:1,e:"✔ Connotation refers to emotional associations beyond literal meaning."},
+ {q:"Which sentence shows correct parallel structure?",o:["He likes running, to swim, biking.","He likes running, swimming, biking.","He likes run, swimming, biking.","He likes to run, swimming, biking."],a:1,e:"✔ Parallelism uses consistent grammatical forms."}
+];
+
+const questions=[];
+for(let k=0;k<110;k++){ const b=base[k%base.length]; questions.push({q:`Q${k+1}. ${b.q}`,o:b.o,a:b.a,e:b.e}); }
+
+function startTimer(){ clearInterval(timer); time=60; document.getElementById('time').textContent=time; timer=setInterval(()=>{ time--; document.getElementById('time').textContent=time; if(time===0) flash(); },1000); }
+function flash(){ const f=document.getElementById('timerFlash'); f.classList.add('active'); setTimeout(()=>f.classList.remove('active'),800); }
+function load(){ startTimer(); document.getElementById('left').textContent=questions.length-i; const q=questions[i]; document.getElementById('q').textContent=q.q; document.getElementById('opts').innerHTML=q.o.map((t,idx)=>`<div class="option" onclick="choose(${idx})">${t}</div>`).join(''); document.getElementById('exp').innerHTML=''; }
+function choose(idx){ clearInterval(timer); const q=questions[i]; const opts=[...document.querySelectorAll('.option')]; opts[q.a].classList.add('correct'); if(idx!==q.a){ opts[idx].classList.add('wrong'); wrong++; } else correct++; document.getElementById('correct').textContent=correct; document.getElementById('wrong').textContent=wrong; document.getElementById('exp').innerHTML=q.e; }
+function nextQ(){ if(i<questions.length-1){ i++; load(); } }
+function resetQ(){ i=0; correct=0; wrong=0; load(); }
+load();
+</script>
+</body>
+</html>
